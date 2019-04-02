@@ -114,6 +114,7 @@ module Grafana
         response_code    = response.code.to_i
         response_body    = response.body
         response_headers = response.headers
+        content_type = response_headers[:content_type]
 
 #         if( @debug )
 #           logger.debug("response_code : #{response_code}" )
@@ -123,8 +124,12 @@ module Grafana
 
         if( ( response_code >= 200 && response_code <= 299 ) || ( response_code >= 400 && response_code <= 499 ) )
 
-          result = JSON.parse( response_body )
-          return { 'status' => response_code, 'message' => result } if( result.is_a?(Array) )
+          if response_body =~ /^\[.*\]$/ || response_body =~ /^\{.*\}$/
+            result = JSON.parse( response_body )
+            return { 'status' => response_code, 'message' => result } if( result.is_a?(Array) )
+          else
+            return { 'status' => response_code, 'message' => response_body }
+          end
 
           result_status     = result.dig('status') if( result.is_a?( Hash ) )
           result['message'] = result_status unless( result_status.nil? )
